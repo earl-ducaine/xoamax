@@ -5,9 +5,20 @@
 * Xomax Internals
   Currently just some notes on where to find 'top level' objects
 
-*buffer-list*
+  - hi::*buffer-list* 
+    all buffers known to Xomax
 
-* 
+  - hi::*window-list* 
+    all windows known to Xomax
+
+  - hi::window-dis-line
+    structure used by window to display the visible portion of the
+    text of the buffer the window is associated with.
+
+
+
+* Quick overview of files.
+
 
 * Modline datastructure
   Xomax has a concept called the modeline which contains various field
