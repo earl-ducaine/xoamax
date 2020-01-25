@@ -1,0 +1,63 @@
+
+
+
+* Hemlock REAME
+
+** About Hemlock
+
+   Xomax is an Emacs-style editor written in Common Lisp.
+
+   Originally named Hemlock and written as a part of CMUCL, work
+   started in 2002 to make it portable to other Common Lisp
+   implementations, and in 2020 was christened Xomax.
+
+
+** Backends
+
+   This version of Hemlock has three backends, of which you need at least
+   one:
+
+     * The TTY backend doesn't need much, except for a terminal
+       and an installed terminfo database.
+
+     * The X11 backend needs CLX and an X server.
+
+     * The experimental Qt backends needs CommonQt.
+
+
+
+**  Building and invocation of a binary
+    #+BEGIN_SRC shell  :tangle no
+      ./build.sh
+      ./hemlock --help
+    #+END_SRC
+
+
+** Building and invocation from the REPL
+   #+BEGIN_SRC lisp  :tangle no
+     (push #p"/path/to/hemlock/" asdf:*central-registry*)
+     (asdf:operate 'asdf:load-op :hemlock.tty)
+     (asdf:operate 'asdf:load-op :hemlock.clx)
+     (asdf:operate 'asdf:load-op :hemlock.qt)
+
+     (hemlock:hemlock)
+   #+END_SRC
+
+ or just
+
+   #+BEGIN_SRC lisp  :tangle no
+     (ed)    ;SBCL and CCL only
+   #+END_SRC
+   
+
+** Misc issues
+   Note, libfixposix is currently required for running Xomax (through
+   iolib).  upon installation of libfixpostfix, you need to eather
+   reboot your machine, so that the library can be found or execute
+   the following lisp:
+
+   #+BEGIN_SRC lisp  :tangle no
+     (push "/usr/local/lib/" cffi:*foreign-library-directories*)
+   #+END_SRC
+
+   

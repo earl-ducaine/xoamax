@@ -1,0 +1,43 @@
+#+STARTUP: showall
+
+* Xomax Internals
+  Currently just some notes on where to find 'top level' objects
+
+  - hi::*buffer-list* 
+    all buffers known to Xomax
+
+  - hi::*window-list* 
+    all windows known to Xomax
+
+  - hi::window-dis-line
+    structure used by window to display the visible portion of the
+    text of the buffer the window is associated with.
+
+
+
+** Quick overview of files.
+
+
+** Modline datastructure
+   Xomax has a concept called the modeline which contains various field
+   that differ based on mode. The essential function in which they're
+   defined is the make-modeline-field. Below is an example of defining
+   a default modeline field:
+
+   #+BEGIN_SRC lisp  :tangle no
+     (make-modeline-field
+      :name :buffer-name
+      :function #'(lambda (buffer window)
+		    "Returns buffer's name followed by a colon and a space
+		     if the name is not derived from the buffer's pathname,
+		     or the empty string."
+		    (declare (ignore window))
+		    (let ((pn (buffer-pathname buffer))
+			  (name (buffer-name buffer)))
+		      (cond ((not pn)
+			     (format nil "~A: " name))
+			    ((string/= (hemlock::pathname-to-buffer-name pn) name)
+			     (format nil "~A: " name))
+			    (t "")))))
+   #+END_SRC
+
