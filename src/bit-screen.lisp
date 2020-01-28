@@ -1956,7 +1956,7 @@
       (let ((ml-buffer (window-modeline-buffer window)))
         (when ml-buffer
           (let ((dl (window-modeline-dis-line window))
-                (chars (make-string new-width))
+                (chars (make-string new-width :initial-element #\Space))
                 (len (min new-width (window-modeline-buffer-len window))))
             (setf (dis-line-old-chars dl) nil)
             (setf (dis-line-chars dl) chars)
@@ -2090,4 +2090,3 @@
 (defun set-window-name-for-window-buffer (window new-buffer)
   (xlib:set-standard-properties (bitmap-hunk-xwindow (window-hunk window))
                                 :icon-name (buffer-name new-buffer)))
-
