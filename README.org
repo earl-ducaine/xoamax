@@ -1,15 +1,15 @@
 
 
 
-* Hemlock REAME
+* Xoamax REAME
 
-** About Hemlock
+** About Xoamax
 
-   Xomax is an Emacs-style editor written in Common Lisp.
+   Xoamax is an Emacs-style editor written in Common Lisp.
 
    Originally named Hemlock and written as a part of CMUCL, work
    started in 2002 to make it portable to other Common Lisp
-   implementations, and in 2020 was christened Xomax.
+   implementations, and in 2020 was christened Xoamax.
 
 
 ** Backends
