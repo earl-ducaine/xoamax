@@ -133,6 +133,9 @@
 
 (defvar *modeline-field-names* (make-hash-table))
 
+;; TODO -- This might be more robust if we make it a macro. In particular,
+;; repeatadly loading a file in which this function is used on the top
+;; level generates a warning.
 (defun make-modeline-field (&key name width function)
   "Returns a modeline-field object."
   (unless (or (eq width nil) (and (integerp width) (plusp width)))

@@ -1,0 +1,91 @@
+# -*- eval: (auto-fill-mode 1) -*-
+#+STARTUP: showall
+#+STARTUP: auto-fill
+
+* Xomax is a catalyst project
+  Since Xomax is a working editor, it satisfies the condition of
+  incremental development, i.e. it's always functional. That allows
+  other projects to be integrated and tested on a diverse array of tasks.
+
+** Xomax tasks
+   - ability to change fonts.
+   - Create side-by-side windows
+   - Read emacs files in CL based emacs vertual machine
+   - Bring Xomax' envirenment into allignment with the Xemacs and GNU
+     Emacs 'object model'
+   - Begin packages and symbols for the Xomax namespace.
+   - Get QT working, even if it's in Motif.
+   - Setup JIRA
+   - Get the Lisp View project working.
+   - Fix a shit ton of bugs.
+   - Integrate with workflow tools like JIRA.
+   - port Org mode to Xomax
+   - Integrate slime with Xomax
+   - Support Wayland and Garnet in Xomax.
+
+
+** Bugs
+
+*** DONE Outlined rectagnles in modeline
+
+    It appears as though the following code is the culprit:
+
+    window-changed
+    src/bit-screen.lisp
+
+*** TODO Xomax exiting causes problemms
+
+    
+**** Report:
+
+     Even when exiting with no errors Xomax doesn't shut down cleanly
+     and can't be relaunched in the extist lisp image, i.e. you have
+     to restart Lisp!
+
+     Note: is seems that this occures when exiting using the UI,
+     i.e. the window manager tries to shut it down, but not when
+     exiting using C-x C-c. That probably indicates an error with how
+     Xomax handles window hints, particularly the one where the WM
+     tells the application a window has been destroyed.
+
+
+
+*** DONE Misc redefining package warnings when loading quicklisp
+    When loading Xomacs from Quicklisp (presumably also when loading
+    using ASFD),
+
+    #+BEGIN_SRC lisp
+      (ql:quickload :hemlock.clx :verbose t)
+    #+END_SRC
+
+    the following errors are generated:
+
+    WARNING: redefining UIOP/PACKAGE:FIND-PACKAGE* in DEFUN 
+    WARNING: redefining UIOP/PACKAGE:FIND-SYMBOL* in DEFUN  
+    WARNING: redefining UIOP/PACKAGE:SYMBOL-CALL in DEFUN   
+    WARNING: redefining UIOP/PACKAGE:INTERN* in DEFUN       
+    WARNING: redefining UIOP/PACKAGE:EXPORT* in DEFUN       
+    WARNING: redefining UIOP/PACKAGE:IMPORT* in DEFUN       
+
+
+
+*** TODO Make make-modeline-field a macro?
+
+    file: src/window.lisp
+
+    ;; TODO -- This might be more robust if we make it a macro. In particular,
+    ;; repeatadly loading a file in which this function is used on the top
+    ;; level generates a warning.
+
+
+    Also, changes aren't reloaded when the file is changed, possible
+    causing a stale version of the function to be loaded.
+
+*** Provide hook for changing font sizes.
+
+    See roadmap/xomax-font-lab.lisp for  discussion about using CLX
+    fonts. 
+
+
+*** Support modern vector fonts.
+

@@ -142,7 +142,9 @@
 ;;; SERVER-DIED -- Internal.
 ;;;
 ;;; Clean up the server. Remove any references to it from variables, etc.
-;;;
+;;; TODO -- Is this old legacy code? We're unable to find
+;;; breakpoint-info-slave which is presumably a slot accessor into the
+;;; breakpoint structure
 (defun server-died (server)
   (declare (special *breakpoints*))
   (let ((name (server-info-name server)))
@@ -170,8 +172,8 @@
       (when (and (hemlock-bound-p var :buffer buffer)
                  (eq (variable-value var :buffer buffer) server))
         (delete-variable var :buffer buffer))))
-  (setf *breakpoints* (delete-if #'(lambda (b)
-                                     (eq (breakpoint-info-slave b) server))
+  (setf *breakpoints* (delete-if #'(lambda (breakpoint)
+                                     (eq (breakpoint-info-slave breakpoint) server))
                                  *breakpoints*)))
 
 ;;; SERVER-CLEANUP -- Internal.
@@ -342,7 +344,7 @@
       (let ((lisp (ext:unix-namestring (merge-pathnames (value slave-utility)
                                                         "file://path/")
                                        t t)))
-     
+
         (unless lisp
           (editor-error "Can't find ``~S'' in your path to run."
                         (value slave-utility)))
@@ -352,7 +354,7 @@
                                           hi::*default-backend*
                                           slave
                                           background)))
-              
+
                (proc
                 (ext:run-program lisp args
                                  :wait nil
@@ -693,8 +695,8 @@
 ;;; Run in the slave to create a new stream and connect it to the supplied
 ;;; buffer.  Returns the stream.
 ;;;
-(defun connect-stream (remote-buffer)
-  (let ((stream (make-ts-stream hemlock.wire:*current-wire* remote-buffer)))
+(defun connect-stream (remote-buffer &optional (wire hemlock.wire:*current-wire*))
+  (let ((stream (make-ts-stream wire remote-buffer)))
     (hemlock.wire:remote hemlock.wire:*current-wire*
       (ts-buffer-set-stream remote-buffer
                             (hemlock.wire:make-remote-object stream)))
@@ -1171,6 +1173,7 @@
 (defun server-compile-file (note package input output error trace
                             load terminal background)
   #-scl (declare (ignore error load))
+  #-(and cmu scl) (declare (ignore output trace))
   (macrolet ((frob (x)
                `(if (hemlock.wire:remote-object-p ,x)
                   (hemlock.wire:remote-object-value ,x)

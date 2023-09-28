@@ -280,6 +280,7 @@
                           (ccref osicat-posix::cflag-vstart)
                           (ccref osicat-posix::cflag-vstop)
                           (ccref osicat-posix::cflag-vsusp)
+                          ;; todo
                           (when (boundp 'osicat-posix::cflag-vdsusp)
                             (ccref osicat-posix::cflag-vdsusp))
                           (ccref osicat-posix::cflag-vmin)

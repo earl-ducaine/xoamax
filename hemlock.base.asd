@@ -96,9 +96,9 @@
                (:file "macros")
                (:file "line")
                (:file "ring")
-               (:file "htext1") ; buffer depends on it --amb
-               (:file "buffer")
-               (:file "vars")
+               (:file "htext1")
+               (:file "buffer" :depends-on (htext1))
+               (:file "vars" :depends-on (buffer))
                (:file "interp")
                (:file "syntax")
                (:file "htext2")

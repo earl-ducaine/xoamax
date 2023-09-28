@@ -276,6 +276,7 @@
 ;;; possible.
 ;;;
 (defun call-display-event-handler (file-descriptor event error)
+  (declare (ignore event))
   (if (eq error :error)
       (iolib:remove-fd-handlers hi::*event-base* file-descriptor :read t)
       (let ((display (gethash file-descriptor *clx-fds-to-displays*)))

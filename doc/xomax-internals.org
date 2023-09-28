@@ -1,3 +1,4 @@
+# -*- eval: (auto-fill-mode 1) -*-
 #+STARTUP: showall
 
 * Xomax Internals
@@ -41,3 +42,13 @@
 			    (t "")))))
    #+END_SRC
 
+** Hemlock-style eval servers
+
+   Hemlock was the originator of Swank. Surely the code has changed a
+   lot between the old CMU eval servers and modern-day Swank, but it's
+   probable that a careful investigation of both will illuminate
+   logical integration points.
+
+   Currently eval-server.lisp::maybe-create-server is commented out,
+   but referenced elsewhere, so much of the old infrustructure remains
+   available for inspection.

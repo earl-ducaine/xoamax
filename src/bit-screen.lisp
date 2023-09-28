@@ -1367,6 +1367,7 @@
                      (value hemlock::default-initial-window-height)
                      *default-font-family*
                      t ;modelinep
+                     ;; TODO -- Where is thum-bar-meter defined?
                      (value hemlock::thumb-bar-meter)
                      "Hemlock")))
       (setf (xlib:window-border xwindow) *highlight-border-pixmap*)
@@ -1561,6 +1562,8 @@
              (incf count))))))
     ;; Probably shoulds insertion sort them, but I'm lame.
     ;;
+    ;; TODO --  note, this doesn't actually do anything this the relults
+    ;; of the sort are thrown away.
     (xlib:with-state (xparent)
       (sort affected-windows #'<
             :key #'(lambda (window)
@@ -1605,6 +1608,7 @@
             (setf start (+ start new-child-height 1))))))))
 
 (defun reconfigure-windows-evenly (affected-windows new-x new-width new-height)
+  (declare (ignore new-x))
   (let ((count (length affected-windows)))
     (multiple-value-bind
         (pixels-per-window remainder)
@@ -2090,4 +2094,3 @@
 (defun set-window-name-for-window-buffer (window new-buffer)
   (xlib:set-standard-properties (bitmap-hunk-xwindow (window-hunk window))
                                 :icon-name (buffer-name new-buffer)))
-

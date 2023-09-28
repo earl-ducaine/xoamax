@@ -390,7 +390,7 @@
 ;;; ordinary output name if the compiler wrote anything to it, or deleted
 ;;; otherwise.  No temporary file is created when output-file is not t.
 ;;;
-
+;;; TODO -- Seems pretty bogus. surely not being used currently.
 (defun file-compile (file
                      &key
                      buffer
