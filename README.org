@@ -9,7 +9,7 @@
 
    Originally named Hemlock and written as a part of CMUCL, work
    started in 2002 to make it portable to other Common Lisp
-   implementations, and in 2020 was christened Xoamax.
+   implementations, and in 2020 the Xoamax (amicalble) fork was created.
 
 
 ** Backends
