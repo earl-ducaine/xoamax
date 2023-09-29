@@ -507,14 +507,13 @@
 ;;; modeline-fields list.  This is used by tty redisplay too.
 ;;;
 (defun setup-modeline-image (buffer window)
-  (setf (window-modeline-buffer window) (make-string hunk-width-limit))
-  (let ((dis-line (make-window-dis-line (make-string (window-width window)))))
+  (setf (window-modeline-buffer window) (make-string hunk-width-limit :initial-element #\SPACE))
+  (let ((dis-line (make-window-dis-line (make-string (window-width window) :initial-element #\SPACE))))
     (setf (window-modeline-dis-line window) dis-line)
     (let ((font-change (make-font-change nil)))
       (setf (dis-line-font-changes dis-line) font-change)
       (setf (font-change-x font-change) 0)
-      (setf (font-change-font font-change) *modeline-font*)
-      ))
+      (setf (font-change-font font-change) *modeline-font*)))
   (update-modeline-fields buffer window))
 
 
