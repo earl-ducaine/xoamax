@@ -84,6 +84,36 @@
 
 (defvar *object-set-event-handler-print* nil)
 
+
+(defun bitmap-dispatch (event-key &rest args)
+  (multiple-value-bind (object object-set)
+      (lisp--map-xwindow event-window)
+    (unless object
+      (cond ((not (typep event-window 'xlib:window))
+             ;;(xlib:discard-current-event display)
+             (warn "Discarding ~S event on non-window ~S."
+                   event-key event-window)
+             (return-from object-set-event-handler nil)
+             )
+            (t
+             (flush-display-events display)
+             (error "~S not a known X window.~%~
+                                   Received event ~S."
+                    event-window event-key))))
+    (handler-bind ((error #'(lambda (condx)
+                              (declare (ignore condx))
+                              (flush-display-events display))))
+      (when *object-set-event-handler-print*
+        (print event-key) (force-output))
+      (apply (gethash event-key
+                      (object-set-table object-set)
+                      (object-set-default-handler
+                       object-set))
+             object event-key
+             args))
+    (setf result t)))
+
+
 (defun object-set-event-handler (display &optional (timeout 0))
   "This display event handler uses object sets to map event windows cross
    event types to handlers.  It uses XLIB:EVENT-CASE to bind all the slots
@@ -98,130 +128,139 @@
    streams loop over SYSTEM:SERVE-EVENT.  This function returns t if there
    were some event to handle, nil otherwise.  It returns immediately if
    there is no event to handle."
-  (macrolet ((dispatch (event-key &rest args)
-               `(multiple-value-bind (object object-set)
-                 (lisp--map-xwindow event-window)
-                 (unless object
-                   (cond ((not (typep event-window 'xlib:window))
-                          ;;(xlib:discard-current-event display)
-                          (warn "Discarding ~S event on non-window ~S."
-                                ,event-key event-window)
-                          (return-from object-set-event-handler nil)
-                          )
-                         (t
-                          (flush-display-events display)
-                          (error "~S not a known X window.~%~
-                                   Received event ~S."
-                                 event-window ,event-key))))
-                 (handler-bind ((error #'(lambda (condx)
-                                           (declare (ignore condx))
-                                           (flush-display-events display))))
-                   (when *object-set-event-handler-print*
-                     (print ,event-key) (force-output))
-                   (funcall (gethash ,event-key
-                                     (object-set-table object-set)
-                                     (object-set-default-handler
-                                      object-set))
-                            object ,event-key
-                            ,@args))
-                 (setf result t))))
-    (let ((*process-clx-event-display* display)
-          (result nil))
-      (xlib:event-case (display :timeout timeout)
-                       ((:key-press :key-release :button-press :button-release)
-                        (event-key event-window root child same-screen-p
-                                   x y root-x root-y state time code send-event-p)
-                        (dispatch event-key event-window root child same-screen-p
-                                  x y root-x root-y state time code send-event-p))
-                       (:motion-notify (event-window root child same-screen-p
-                                        x y root-x root-y state time hint-p send-event-p)
-                        (dispatch :motion-notify event-window root child same-screen-p
-                         x y root-x root-y state time hint-p send-event-p))
-                       (:enter-notify (event-window root child same-screen-p
-                                       x y root-x root-y state time mode kind send-event-p)
-                        (dispatch :enter-notify event-window root child same-screen-p
-                         x y root-x root-y state time mode kind send-event-p))
-                       (:leave-notify (event-window root child same-screen-p
-                                       x y root-x root-y state time mode kind send-event-p)
-                        (dispatch :leave-notify event-window root child same-screen-p
-                         x y root-x root-y state time mode kind send-event-p))
-                       (:exposure (event-window x y width height count send-event-p)
-                        (dispatch :exposure event-window x y width height count send-event-p))
-                       (:graphics-exposure (event-window x y width height count major minor
-                                            send-event-p)
-                        (dispatch :graphics-exposure event-window x y width height
-                         count major minor send-event-p))
-                       (:no-exposure (event-window major minor send-event-p)
-                        (dispatch :no-exposure event-window major minor send-event-p))
-                       (:focus-in (event-window mode kind send-event-p)
-                        (dispatch :focus-in event-window mode kind send-event-p))
-                       (:focus-out (event-window mode kind send-event-p)
-                        (dispatch :focus-out event-window mode kind send-event-p))
-                       (:keymap-notify ()
-                        (warn "Ignoring keymap notify event.")
-                        (when *object-set-event-handler-print*
-                          (print :keymap-notify) (force-output))
-                        (setf result t))
-                       (:visibility-notify (event-window state send-event-p)
-                        (dispatch :visibility-notify event-window state send-event-p))
-                       (:create-notify (event-window window x y width height border-width
-                                        override-redirect-p send-event-p)
-                        (dispatch :create-notify event-window window x y width height
-                         border-width override-redirect-p send-event-p))
-                       (:destroy-notify (event-window window send-event-p)
-                        (dispatch :destroy-notify event-window window send-event-p))
-                       (:unmap-notify (event-window window configure-p send-event-p)
-                        (dispatch :unmap-notify event-window window configure-p send-event-p))
-                       (:map-notify (event-window window override-redirect-p send-event-p)
-                        (dispatch :map-notify event-window window override-redirect-p
-                         send-event-p))
-                       (:map-request (event-window window send-event-p)
-                        (dispatch :map-request event-window window send-event-p))
-                       (:reparent-notify (event-window window parent x y override-redirect-p
-                                          send-event-p)
-                        (dispatch :reparent-notify event-window window parent x y
-                         override-redirect-p send-event-p))
-                       (:configure-notify (event-window window x y width height border-width
-                                           above-sibling override-redirect-p send-event-p)
-                        (dispatch :configure-notify event-window window x y width height
-                         border-width above-sibling override-redirect-p
-                         send-event-p))
-                       (:gravity-notify (event-window window x y send-event-p)
-                        (dispatch :gravity-notify event-window window x y send-event-p))
-                       (:resize-request (event-window width height send-event-p)
-                        (dispatch :resize-request event-window width height send-event-p))
-                       (:configure-request (event-window window x y width height border-width
-                                            stack-mode above-sibling value-mask send-event-p)
-                        (dispatch :configure-request event-window window x y width height
-                         border-width stack-mode above-sibling value-mask
-                         send-event-p))
-                       (:circulate-notify (event-window window place send-event-p)
-                        (dispatch :circulate-notify event-window window place send-event-p))
-                       (:circulate-request (event-window window place send-event-p)
-                        (dispatch :circulate-request event-window window place send-event-p))
-                       (:property-notify (event-window atom state time send-event-p)
-                        (dispatch :property-notify event-window atom state time send-event-p))
-                       (:selection-clear (event-window selection time send-event-p)
-                        (dispatch :selection-notify event-window selection time send-event-p))
-                       (:selection-request (event-window requestor selection target property
-                                            time send-event-p)
-                        (dispatch :selection-request event-window requestor selection target
-                         property time send-event-p))
-                       (:selection-notify (event-window selection target property time
-                                           send-event-p)
-                        (dispatch :selection-notify event-window selection target property time
-                         send-event-p))
-                       (:colormap-notify (event-window colormap new-p installed-p send-event-p)
-                        (dispatch :colormap-notify event-window colormap new-p installed-p
-                         send-event-p))
-                       (:mapping-notify (request)
-                        (warn "Ignoring mapping notify event -- ~S." request)
-                        (when *object-set-event-handler-print*
-                          (print :mapping-notify) (force-output))
-                        (setf result t))
-                       (:client-message (event-window format data send-event-p)
-                        (dispatch :client-message event-window format data send-event-p)))
-      result)))
+  (macrolet (;; (dispatch (event-key &rest args)
+             ;;   `(multiple-value-bind (object object-set)
+             ;;        (lisp--map-xwindow event-window)
+             ;;      (unless object
+             ;;        (cond ((not (typep event-window 'xlib:window))
+             ;;               ;;(xlib:discard-current-event display)
+             ;;               (warn "Discarding ~S event on non-window ~S."
+             ;;                     ,event-key event-window)
+             ;;               (return-from object-set-event-handler nil)
+             ;;               )
+             ;;              (t
+             ;;               (flush-display-events display)
+             ;;               (error "~S not a known X window.~%~
+             ;;                       Received event ~S."
+             ;;                      event-window ,event-key))))
+             ;;      (handler-bind ((error #'(lambda (condx)
+             ;;                                (declare (ignore condx))
+             ;;                                (flush-display-events display))))
+             ;;        (when *object-set-event-handler-print*
+             ;;          (print ,event-key) (force-output))
+             ;;        (funcall (gethash ,event-key
+             ;;                          (object-set-table object-set)
+             ;;                          (object-set-default-handler
+             ;;                           object-set))
+             ;;                 object ,event-key
+             ;;                 ,@args))
+             ;;      (setf result t)))
+             )
+    (let* ((*process-clx-event-display* display)
+           (result nil)
+           (dispatch-result
+             (xlib:event-case (display :timeout timeout)
+               ((:key-press :key-release :button-press :button-release)
+                (event-key event-window root child same-screen-p
+                           x y root-x root-y state time code send-event-p)
+                (dispatch event-key event-window root child same-screen-p
+                          x y root-x root-y state time code send-event-p))
+               (:motion-notify (event-window root child same-screen-p
+                                             x y root-x root-y state time hint-p send-event-p)
+                               (dispatch :motion-notify event-window root child same-screen-p
+                                         x y root-x root-y state time hint-p send-event-p))
+               (:enter-notify (event-window root child same-screen-p
+                                            x y root-x root-y state time mode kind send-event-p)
+                              (dispatch :enter-notify event-window root child same-screen-p
+                                        x y root-x root-y state time mode kind send-event-p))
+               (:leave-notify (event-window root child same-screen-p
+                                            x y root-x root-y state time mode kind send-event-p)
+                              (dispatch :leave-notify event-window root child same-screen-p
+                                        x y root-x root-y state time mode kind send-event-p))
+               (:exposure (event-window x y width height count send-event-p)
+                          (dispatch :exposure event-window x y width height count send-event-p))
+               (:graphics-exposure (event-window x y width height count major minor
+                                                 send-event-p)
+                                   (dispatch :graphics-exposure event-window x y width height
+                                             count major minor send-event-p))
+               (:no-exposure (event-window major minor send-event-p)
+                             (dispatch :no-exposure event-window major minor send-event-p))
+               (:focus-in (event-window mode kind send-event-p)
+                          (dispatch :focus-in event-window mode kind send-event-p))
+               (:focus-out (event-window mode kind send-event-p)
+                           (dispatch :focus-out event-window mode kind send-event-p))
+               (:keymap-notify ()
+                               (warn "Ignoring keymap notify event.")
+                               (when *object-set-event-handler-print*
+                                 (print :keymap-notify) (force-output))
+                               (setf result t))
+               (:visibility-notify (event-window state send-event-p)
+                                   (dispatch :visibility-notify event-window state send-event-p))
+               (:create-notify (event-window window x y width height border-width
+                                             override-redirect-p send-event-p)
+                               (dispatch :create-notify event-window window x y width height
+                                         border-width override-redirect-p send-event-p))
+               (:destroy-notify (event-window window send-event-p)
+                                (dispatch :destroy-notify event-window window send-event-p))
+               (:unmap-notify (event-window window configure-p send-event-p)
+                              (dispatch :unmap-notify event-window window configure-p send-event-p))
+               (:map-notify (event-window window override-redirect-p send-event-p)
+                            (dispatch :map-notify event-window window override-redirect-p
+                                      send-event-p))
+               (:map-request (event-window window send-event-p)
+                             (dispatch :map-request event-window window send-event-p))
+               (:reparent-notify (event-window window parent x y override-redirect-p
+                                               send-event-p)
+                                 (dispatch :reparent-notify event-window window parent x y
+                                           override-redirect-p send-event-p))
+               (:configure-notify (event-window window x y width height border-width
+                                                above-sibling override-redirect-p send-event-p)
+                                  (dispatch :configure-notify event-window window x y width height
+                                            border-width above-sibling override-redirect-p
+                                            send-event-p))
+               (:gravity-notify (event-window window x y send-event-p)
+                                (dispatch :gravity-notify event-window window x y send-event-p))
+               (:resize-request (event-window width height send-event-p)
+                                (dispatch :resize-request event-window width height send-event-p))
+               (:configure-request (event-window window x y width height border-width
+                                                 stack-mode above-sibling value-mask send-event-p)
+                                   (dispatch :configure-request event-window window x y width height
+                                             border-width stack-mode above-sibling value-mask
+                                             send-event-p))
+               (:circulate-notify (event-window window place send-event-p)
+                                  (dispatch :circulate-notify event-window window place send-event-p))
+               (:circulate-request (event-window window place send-event-p)
+                                   (dispatch :circulate-request event-window window place send-event-p))
+               (:property-notify (event-window atom state time send-event-p)
+                                 (dispatch :property-notify event-window atom state time send-event-p))
+               (:selection-clear (event-window selection time send-event-p)
+                                 (dispatch :selection-notify event-window selection time send-event-p))
+               (:selection-request (event-window requestor selection target property
+                                                 time send-event-p)
+                                   (dispatch :selection-request event-window requestor selection target
+                                             property time send-event-p))
+               (:selection-notify (event-window selection target property time
+                                                send-event-p)
+                                  (dispatch :selection-notify event-window selection target property time
+                                            send-event-p))
+               (:colormap-notify (event-window colormap new-p installed-p send-event-p)
+                                 (dispatch :colormap-notify event-window colormap new-p installed-p
+                                           send-event-p))
+               (:mapping-notify (request)
+                                (warn "Ignoring mapping notify event -- ~S." request)
+                                (when *object-set-event-handler-print*
+                                  (print :mapping-notify) (force-output))
+                                (setf result t))
+               (:client-message (event-window format data send-event-p)
+                                (dispatch :client-message event-window format data send-event-p)))))
+      ;; BITMAP-DISPATCH used to be a local macro. As such it three
+      ;; ways that it could return results, in order of priority:
+      ;; 1. Return directly from OBJECT-SET-EVENT-HANDLER
+      ;; 2. Set the local RESULT to some value
+      ;; 3.
+
+
+      (or override-result result dispatch-result))))
 
 (defun default-clx-event-handler (object event-key event-window &rest ignore)
   (declare (ignore ignore))
